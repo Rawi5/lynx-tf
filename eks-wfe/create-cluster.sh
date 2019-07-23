@@ -8,7 +8,8 @@ AWS_KEY=
 AWS_SECRET=
 CORP_IPS=`curl -s https://ifconfig.co`/32
 mkdir -p ./output
-=while getopts c:n:t:r:k:s:i: option
+
+while getopts c:n:t:r:k:s:i: option
 do
         case $option in
                 c) CLUSTER_NAME=${OPTARG} ;;
