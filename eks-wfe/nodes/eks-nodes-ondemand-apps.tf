@@ -31,7 +31,7 @@ resource "aws_autoscaling_group" "eks-scaling-group-ondemand-apps" {
   tags = [
     {
       key                 = "Name"
-      value               = "${var.cluster-name}-eks-ondemand-apps-${count.index}"
+      value               = "${var.cluster-name}-eks-autoscale-apps"
       propagate_at_launch = true
     },
     {

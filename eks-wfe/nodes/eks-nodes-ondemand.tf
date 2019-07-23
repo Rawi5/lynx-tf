@@ -24,7 +24,7 @@ resource "aws_instance" "public-node" {
   associate_public_ip_address = true
   source_dest_check           = false
 
-  root_block_device = {
+  root_block_device {
     delete_on_termination = true
     volume_size           = 20
     volume_type           = "gp2"

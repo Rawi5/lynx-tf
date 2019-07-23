@@ -88,7 +88,7 @@ locals {
 #!/bin/bash
 set -o xtrace
 yum update -y
-STATUS=$(curl -s -o /dev/null -w '%{http_code}' http://169.254.169.254/latest/meta-data/public-ipv4)
+STATUS=$(curl -s -o /dev/null -w '%\{http_code\}' http://169.254.169.254/latest/meta-data/public-ipv4)
 
 if [ $STATUS -eq 200 ]; then
  NODE_IP=$(curl -s http://169.254.169.254/latest/meta-data/public-ipv4)
