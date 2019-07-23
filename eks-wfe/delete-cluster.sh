@@ -6,7 +6,7 @@ EKS_TYPE=cluster
 CLUSTER_REGION=us-east-1
 AWS_KEY=AKIAX7U7VQOSX4UAA4HE
 AWS_SECRET=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
-
+CORP_IPS=`curl -s https://ifconfig.co`/32
 mkdir -p ./output
 
 while getopts c:n:t:r:k:s: option
@@ -40,6 +40,7 @@ cat ./eks-vars.tfvars.tmpl   \
   | sed "s|{{CLUSTER_REGION}}|${CLUSTER_REGION}|g"  \
   | sed "s|{{AWS_KEY}}|${AWS_KEY}|g"  \
   | sed "s|{{AWS_SECRET}}|${AWS_SECRET}|g"  \
+  | sed "s|{{CORP_IPS}}|${CORP_IPS}|g"  \
 > ./output/eks-vars-${CLUSTER_NAME}.tfvars
 
 
