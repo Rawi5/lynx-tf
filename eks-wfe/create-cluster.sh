@@ -4,12 +4,11 @@ CLUSTER_NAME=stacklynx-v2
 VPC_PREFIX=10.11
 EKS_TYPE=cluster
 CLUSTER_REGION=us-east-1
-AWS_KEY=AKIAX7U7VQOSX4UAA4HE
-AWS_SECRET=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
-CORP_IPS=`curl https://ifconfig.co`
+AWS_KEY=
+AWS_SECRET=
+CORP_IPS=`curl -s https://ifconfig.co`/32
 mkdir -p ./output
-
-while getopts c:n:t:r:k:s:i: option
+=while getopts c:n:t:r:k:s:i: option
 do
         case $option in
                 c) CLUSTER_NAME=${OPTARG} ;;
