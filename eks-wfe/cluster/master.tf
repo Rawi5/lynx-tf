@@ -622,7 +622,7 @@ resource "aws_security_group" "gateway" {
 }
 
 resource "aws_security_group_rule" "eks-node-ingress-corporate" {
-  count             = 4
+  count             = 1
   cidr_blocks       = ["${var.corporate_cidr_list[count.index]}"]
   description       = "Allow corporate networks to communicate with nodes"
   from_port         = 0
@@ -633,7 +633,7 @@ resource "aws_security_group_rule" "eks-node-ingress-corporate" {
 }
 
 resource "aws_security_group_rule" "master-cluster-ingress-trusted" {
-  count             = 4
+  count             = 1
   cidr_blocks       = ["${var.corporate_cidr_list[count.index]}"]
   description       = "Allow corporate networks to communicate with nodes"
   from_port         = 0
