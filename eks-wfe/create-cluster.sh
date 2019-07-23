@@ -3,10 +3,10 @@
 CLUSTER_NAME=stacklynx-v2
 VPC_PREFIX=10.11
 EKS_TYPE=cluster
-CLUSTER_REGION=us-west-2
-AWS_KEY=
-AWS_SECRET=
-
+CLUSTER_REGION=us-east-1
+AWS_KEY=AKIAX7U7VQOSX4UAA4HE
+AWS_SECRET=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
+CORP_IPS=
 mkdir -p ./output
 
 while getopts c:n:t:r:k:s: option
@@ -18,6 +18,7 @@ do
 	            r) CLUSTER_REGION=${OPTARG} ;;
 				k) AWS_KEY=${OPTARG} ;;
 				s) AWS_SECRET=${OPTARG} ;;
+				i) CORP_IPS=${OPTARG} ;;
                 \?) echo "Unknown option: -$OPTARG" >&2; phelp; exit 1;;
         		:) echo "Missing option argument for -$OPTARG" >&2; phelp; exit 1;;
         		*) echo "Unimplimented option: -$OPTARG" >&2; phelp; exit 1;;
@@ -40,6 +41,7 @@ cat ./eks-vars.tfvars.tmpl   \
   | sed "s|{{CLUSTER_REGION}}|${CLUSTER_REGION}|g"  \
   | sed "s|{{AWS_KEY}}|${AWS_KEY}|g"  \
   | sed "s|{{AWS_SECRET}}|${AWS_SECRET}|g"  \
+  | sed "s|{{CORP_IPS}}|${CORP_IPS}|g"  \
 > ./output/eks-vars-${CLUSTER_NAME}.tfvars
 
 

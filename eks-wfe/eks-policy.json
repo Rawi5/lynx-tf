@@ -5,13 +5,9 @@
             "Sid": "VisualEditor0",
             "Effect": "Allow",
             "Action": [
-
-                "iam:GetRole",
+                "iam:*",
                 "ec2:*",
-                "iam:PassRole",
-                "iam:ListRoles",
-                "iam:UpdateRole",
-                "iam:CreateRole",
+                "autoscaling:*",
                 "eks:*"
             ],
             "Resource": "*"

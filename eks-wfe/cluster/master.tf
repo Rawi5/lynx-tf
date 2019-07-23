@@ -3,7 +3,7 @@ variable "cluster-name" {}
 variable "corporate_cidr_list" {
   type = "list"
 
-  default = ["103.60.214.209/32", "157.119.108.71/32", "103.60.212.203/32", "162.237.206.249/32"]
+  default = []
 }
 
 variable "vpcnet_prefix" {
@@ -11,7 +11,7 @@ variable "vpcnet_prefix" {
 }
 
 variable "notify_webhook" {
-  default = "https://hooks.slack.com/services/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"
+  default = ""
 }
 
 data "aws_region" "current" {}
@@ -776,6 +776,35 @@ mountOptions:
   - debug
 ---
 STORAGEYAML
+
+  letsencrypt_policy = <<LETSENCRYPT_POLICY
+apiVersion: certmanager.k8s.io/v1alpha1
+kind: ClusterIssuer
+metadata:
+  name: letsencrypt-staging
+spec:
+  acme:
+    server: https://acme-staging-v02.api.letsencrypt.org/directory
+    email: 'devops@stacklynx.com'
+    privateKeySecretRef:
+      name: letsencrypt-staging
+    http01: {}
+---
+apiVersion: certmanager.k8s.io/v1alpha1
+kind: ClusterIssuer
+metadata:
+  name: letsencrypt-prod
+spec:
+  acme:
+    server: https://acme-v02.api.letsencrypt.org/directory
+    email: 'devops@stacklynx.com'
+    privateKeySecretRef:
+      name: letsencrypt-prod
+    http01: {}
+
+LETSENCRYPT_POLICY
+
+
 }
 
 resource "local_file" "kube_cfg" {
@@ -808,6 +837,11 @@ resource "local_file" "eks-storage-file" {
   filename = "${path.module}/output/${var.cluster-name}-storage.yaml"
 }
 
+resource "local_file" "letsencrypt_policy_file" {
+  content  = "${local.letsencrypt_policy}"
+  filename = "${path.module}/output/${var.cluster-name}-letsencryptpolicy.yaml"
+}
+
 locals {
   eks-run-script = <<RUNSCRIPT
 
@@ -832,6 +866,23 @@ kubectl apply -f ${local_file.kube_role_binding.filename}
 
 #create storage class and volumes
 kubectl apply -f ${local_file.eks-storage-file.filename}
+
+
+#setup helm for the cluster
+kubectl create serviceaccount --namespace kube-system tiller
+kubectl create clusterrolebinding tiller-cluster-rule --clusterrole=cluster-admin --serviceaccount=kube-system:tiller
+helm init --service-account tiller
+sleep 30
+
+helm install --name nginx-ingress stable/nginx-ingress --set rbac.create=true --namespace ingress-nginx
+
+helm install stable/cert-manager \
+    --namespace ingress-nginx  \
+    --set ingressShim.defaultIssuerName=letsencrypt-prod \
+    --set ingressShim.defaultIssuerKind=ClusterIssuer \
+    --version v0.5.2
+
+kubectl apply -f ${local_file.letsencrypt_policy_file.filename} -n ingress-nginx
 
 
 APISERVER=$(kubectl config view | grep server | cut -f 2- -d ":" | tr -d " ")
@@ -895,8 +946,10 @@ NOTIFY_WEBHOOK=${var.notify_webhook}
 HOSTNAME=`hostname`
 CURR_DATE=`date`
 
-CHAT_MSG="{\"username\":\"eks-cluster:  ${var.cluster-name}\",    \"text\": \"Hostname:  $HOSTNAME Public-Ip:$NODE_IP  started at  $CURR_DATE\", \"attachments\": [ {\"title\": \"System Stats\", \"text\": \"$MEMORY  $DISK CPU Count:$CPU\"}]}"
-curl -d "$CHAT_MSG" -H "Content-Type: application/json" -X POST $NOTIFY_WEBHOOK
+if [ -z "$NOTIFY_WEBHOOK" ]; then
+  CHAT_MSG="{\"username\":\"eks-cluster:  ${var.cluster-name}\",    \"text\": \"Hostname:  $HOSTNAME NODE-IP:$NODE_IP  started at  $CURR_DATE\", \"attachments\": [ {\"title\": \"System Stats\", \"text\": \"$MEMORY  $DISK CPU Count:$CPU\"}]}"
+  curl -d "$CHAT_MSG" -H "Content-Type: application/json" -X POST $NOTIFY_WEBHOOK
+fi
 
 USERDATA
 
