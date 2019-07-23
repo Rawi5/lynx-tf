@@ -6,10 +6,10 @@ EKS_TYPE=cluster
 CLUSTER_REGION=us-east-1
 AWS_KEY=AKIAX7U7VQOSX4UAA4HE
 AWS_SECRET=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
-CORP_IPS=
+CORP_IPS=`curl https://ifconfig.co`
 mkdir -p ./output
 
-while getopts c:n:t:r:k:s: option
+while getopts c:n:t:r:k:s:i: option
 do
         case $option in
                 c) CLUSTER_NAME=${OPTARG} ;;
