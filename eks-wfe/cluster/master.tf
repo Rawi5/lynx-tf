@@ -31,11 +31,11 @@ data "aws_ami" "eks-worker" {
 data "aws_ami" "gateway" {
   filter {
     name   = "name"
-    values = ["amzn-ami-vpc-nat-hvm-2018.03.0.*"]
+    values = ["amzn-ami-vpc-nat-hvm-2018.*"]
   }
 
   most_recent = true
-  owners      = ["602401143452"] # Amazon Account ID
+  owners      = ["amazon"] # Amazon Account ID
 }
 
 resource "aws_vpc" "eks-vpc" {
