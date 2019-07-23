@@ -105,9 +105,11 @@ resource "aws_subnet" "eks-subnet-private-b" {
 resource "aws_internet_gateway" "eks-igw" {
   vpc_id = "${aws_vpc.eks-vpc.id}"
 
-  tags {
+ tags = {
     Name = "${var.cluster-name}"
   }
+
+  
 }
 
 resource "aws_route_table" "eks-rt" {
@@ -118,7 +120,7 @@ resource "aws_route_table" "eks-rt" {
     gateway_id = "${aws_internet_gateway.eks-igw.id}"
   }
 
-  tags {
+ tags = {
     Name = "${var.cluster-name}-rt-public"
   }
 }
@@ -131,7 +133,7 @@ resource "aws_route_table" "eks-rt-private" {
     instance_id = "${aws_instance.system-gateway.id}"
   }
 
-  tags {
+ tags = {
     Name = "${var.cluster-name}-rt-private"
   }
 }
@@ -280,7 +282,7 @@ resource "aws_security_group" "eks-cluster-master" {
     description = "ingress from cluster vpc"
   }
 
-  tags {
+ tags = {
     Name = "${var.cluster-name}-master"
   }
 }
@@ -305,7 +307,7 @@ resource "aws_security_group" "eks-transit" {
     security_groups = ["${aws_security_group.eks-corporate.id}"]
   }
 
-  tags {
+ tags = {
     Name = "${var.cluster-name}-transit"
   }
 }
@@ -617,7 +619,7 @@ resource "aws_security_group" "gateway" {
     description = "Cluster VPC"
   }
 
-  tags {
+ tags = {
     Name = "${var.cluster-name}-gateway"
   }
 }
