@@ -976,10 +976,10 @@ resource "aws_instance" "system-node" {
   associate_public_ip_address = false
   source_dest_check           = false
 
-  root_block_device = {
+  root_block_device = [{
     delete_on_termination = true
     volume_size           = 20
-  }
+  }]
 
   tags = "${
     map(
@@ -1000,10 +1000,10 @@ resource "aws_instance" "system-gateway" {
   associate_public_ip_address = true
   source_dest_check           = false
 
-  root_block_device = {
+  root_block_device = [{
     delete_on_termination = true
     volume_size           = 8
-  }
+  }]
 
   tags = "${
     map(
