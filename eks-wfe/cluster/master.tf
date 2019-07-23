@@ -35,6 +35,7 @@ data "aws_ami" "gateway" {
   }
 
   most_recent = true
+  owners      = ["602401143452"] # Amazon Account ID
 }
 
 resource "aws_vpc" "eks-vpc" {
