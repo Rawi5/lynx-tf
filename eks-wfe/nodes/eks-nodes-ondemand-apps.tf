@@ -9,7 +9,7 @@ resource "aws_launch_configuration" "eks-launch-config-apps-ondemand" {
   associate_public_ip_address = false
   iam_instance_profile        = "${data.aws_iam_instance_profile.eks-node-profile.name}"
   image_id                    = "${data.aws_ami.eks-worker.id}"
-  instance_type               = "m5.large"
+  instance_type               = "t3.medium"
   security_groups             = ["${data.aws_security_group.eks-node-private.id}"]
   user_data                   = "${base64encode(local.ondemand-apps-node-userdata )}"
   key_name                    = "${var.cluster-name}-kp"
