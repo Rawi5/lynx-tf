@@ -46,3 +46,5 @@ cat ./eks-vars.tfvars.tmpl   \
 
 terraform  init  $EKS_TYPE
 terraform  apply -var-file=./output/eks-vars-${CLUSTER_NAME}.tfvars -state=./output/$CLUSTER_NAME-$EKS_TYPE.state   $EKS_TYPE
+
+echo "set Env variables execute this: source cluster/output/${CLUSTER_NAME}-auth-keys.sh"

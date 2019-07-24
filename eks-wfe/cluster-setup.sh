@@ -1,3 +1,6 @@
+CLUSTER_NAME=${1:-stacklynx-v2}
+
+source cluster/output/${CLUSTER_NAME}-auth-keys.sh  
 
 cat <<EOF > ./output/letsencrypt-issuer.yaml
 apiVersion: certmanager.k8s.io/v1alpha1
@@ -36,3 +39,8 @@ helm install stable/cert-manager \
 
 kubectl apply -f ./output/letsencrypt-issuer.yaml -n ingress-nginx
 
+echo "Pausing 30 sec for the load balancer to created"
+sleep 30
+ELB_EXTERNAL_IP=$(kubectl get  svc nginx-ingress-controller -n ingress-nginx -o jsonpath="{.status.loadBalancer.ingress[0].hostname}")
+
+echo ELB: $ELB_EXTERNAL_IP
