@@ -4,8 +4,8 @@ CLUSTER_NAME=stacklynx-v2
 VPC_PREFIX=10.11
 EKS_TYPE=cluster
 CLUSTER_REGION=us-east-1
-AWS_KEY=AKIAX7U7VQOSX4UAA4HE
-AWS_SECRET=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
+AWS_KEY=
+AWS_SECRET=
 CORP_IPS=`curl -s https://ifconfig.co`/32
 mkdir -p ./output
 
@@ -43,5 +43,5 @@ cat ./eks-vars.tfvars.tmpl   \
   | sed "s|{{CORP_IPS}}|${CORP_IPS}|g"  \
 > ./output/eks-vars-${CLUSTER_NAME}.tfvars
 
-
+terraform init  $EKS_TYPE
 terraform destroy -var-file=./output/eks-vars-${CLUSTER_NAME}.tfvars -state=./output/$CLUSTER_NAME-$EKS_TYPE.state   $EKS_TYPE

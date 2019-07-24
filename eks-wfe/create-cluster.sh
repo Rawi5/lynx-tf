@@ -44,5 +44,5 @@ cat ./eks-vars.tfvars.tmpl   \
   | sed "s|{{CORP_IPS}}|${CORP_IPS}|g"  \
 > ./output/eks-vars-${CLUSTER_NAME}.tfvars
 
-terraform init  $EKS_TYPE
-terraform apply -var-file=./output/eks-vars-${CLUSTER_NAME}.tfvars -state=./output/$CLUSTER_NAME-$EKS_TYPE.state   $EKS_TYPE
+terraform  init  $EKS_TYPE
+terraform  apply -var-file=./output/eks-vars-${CLUSTER_NAME}.tfvars -state=./output/$CLUSTER_NAME-$EKS_TYPE.state   $EKS_TYPE

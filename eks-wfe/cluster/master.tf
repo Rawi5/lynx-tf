@@ -25,7 +25,7 @@ data "aws_ami" "eks-worker" {
   }
 
   most_recent = true
-  owners      = ["602401143452"] # Amazon Account ID
+  owners      = ["amazon"] # Amazon Account ID
 }
 
 data "aws_ami" "gateway" {
@@ -195,7 +195,7 @@ resource "aws_iam_role_policy_attachment" "eks-node-EC2ReadOnly-master" {
 resource "aws_eks_cluster" "eks-cluster" {
   name     = "${var.cluster-name}"
   role_arn = "${aws_iam_role.eks-master-role.arn}"
-
+  version = "1.12"
   vpc_config {
     security_group_ids = ["${aws_security_group.eks-cluster-master.id}"]
     subnet_ids         = ["${aws_subnet.eks-public-a.id}", "${aws_subnet.eks-public-b.id}"]
@@ -875,17 +875,6 @@ kubectl apply -f ${local_file.eks-storage-file.filename}
 kubectl create serviceaccount --namespace kube-system tiller
 kubectl create clusterrolebinding tiller-cluster-rule --clusterrole=cluster-admin --serviceaccount=kube-system:tiller
 helm init --service-account tiller
-sleep 30
-
-helm install --name nginx-ingress stable/nginx-ingress --set rbac.create=true --namespace ingress-nginx
-
-helm install stable/cert-manager \
-    --namespace ingress-nginx  \
-    --set ingressShim.defaultIssuerName=letsencrypt-prod \
-    --set ingressShim.defaultIssuerKind=ClusterIssuer \
-    --version v0.5.2
-
-kubectl apply -f ${local_file.letsencrypt_policy_file.filename} -n ingress-nginx
 
 
 APISERVER=$(kubectl config view | grep server | cut -f 2- -d ":" | tr -d " ")
@@ -968,7 +957,7 @@ resource "aws_instance" "system-node" {
   ami                    = "${data.aws_ami.eks-worker.id}"
   instance_type          = "t3.small"
   key_name               = "${var.cluster-name}-kp"
-  vpc_security_group_ids = ["${aws_security_group.eks-node-secure.id}"]
+  vpc_security_group_ids = ["${aws_security_group.eks-node-private.id}"]
   user_data_base64       = "${base64encode(local.system-node-userdata)}"
   subnet_id              = "${aws_subnet.eks-subnet-private.id}"
   iam_instance_profile   = "${aws_iam_instance_profile.eks-node-profile.name}"
