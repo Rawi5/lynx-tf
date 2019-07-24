@@ -195,7 +195,6 @@ resource "aws_iam_role_policy_attachment" "eks-node-EC2ReadOnly-master" {
 resource "aws_eks_cluster" "eks-cluster" {
   name     = "${var.cluster-name}"
   role_arn = "${aws_iam_role.eks-master-role.arn}"
-  version = "1.12"
   vpc_config {
     security_group_ids = ["${aws_security_group.eks-cluster-master.id}"]
     subnet_ids         = ["${aws_subnet.eks-public-a.id}", "${aws_subnet.eks-public-b.id}"]
