@@ -12,7 +12,7 @@ USERDATA
 }
 
 resource "aws_instance" "public-node" {
-  count                  = 1
+  count                  = 0
   ami                    = "${data.aws_ami.eks-worker.id}"
   instance_type          = "t3.small"
   key_name               = "${var.cluster-name}-kp"

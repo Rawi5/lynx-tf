@@ -1,4 +1,5 @@
 #!/bin/bash
+start_time="$(date -u +%s)"
 
 CLUSTER_NAME=stacklynx-v2
 VPC_PREFIX=10.11
@@ -47,4 +48,15 @@ cat ./eks-vars.tfvars.tmpl   \
 terraform  init  $EKS_TYPE
 terraform  apply -var-file=./output/eks-vars-${CLUSTER_NAME}.tfvars -state=./output/$CLUSTER_NAME-$EKS_TYPE.state   $EKS_TYPE
 
+end_time="$(date -u +%s)"
+elapsed="$(($end_time-$start_time))"
+echo "Total time taken for cluster creation: $elapsed sec"
+
 echo "set Env variables execute this: source cluster/output/${CLUSTER_NAME}-auth-keys.sh"
+
+source cluster/output/${CLUSTER_NAME}-auth-keys.sh 
+echo Waiting 15s for the nodes to be initialized
+sleep 15 
+kubectl get nodes
+
+

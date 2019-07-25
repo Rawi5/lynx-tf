@@ -35,8 +35,14 @@ export PATH=~/.local/bin:$PATH
 pip install awscli --upgrade --user
 aws --version
 
-curl -o /tmp/terraform_0.12.5_linux_amd64.zip  https://releases.hashicorp.com/terraform/0.12.5/terraform_0.12.5_linux_amd64.zip && \
-    unzip /tmp/terraform_0.12.5_linux_amd64.zip  -d /usr/local/bin \
-    && rm /tmp/terraform_0.12.5_linux_amd64.zip
+curl -o /tmp/terraform_linux_amd64.zip  https://releases.hashicorp.com/terraform/0.12.5/terraform_0.12.5_linux_amd64.zip && \
+    unzip /tmp/terraform_linux_amd64.zip -d /usr/local/bin \
+    && rm /tmp/terraform_linux_amd64.zip
 
+
+terraform -v
+
+kubectl version
+
+helm version
 
