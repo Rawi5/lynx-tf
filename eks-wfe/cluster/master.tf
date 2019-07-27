@@ -10,6 +10,10 @@ variable "vpcnet_prefix" {
   default = "10.10"
 }
 
+variable "eks_cluster_version" {
+  default = "1.13"
+}
+
 variable "notify_webhook" {
   default = ""
 }
@@ -21,7 +25,7 @@ data "aws_availability_zones" "available" {}
 data "aws_ami" "eks-worker" {
   filter {
     name   = "name"
-    values = ["amazon-eks-node-1.11*"]
+    values = ["amazon-eks-node-${var.eks_cluster_version}*"]
   }
 
   most_recent = true
@@ -72,6 +76,7 @@ resource "aws_subnet" "eks-public-b" {
     map(
      "Name", "${var.cluster-name}-public-b",
      "kubernetes.io/cluster/${var.cluster-name}", "shared",
+     "kubernetes.io/role/elb","1"
     )
   }"
 }
@@ -85,6 +90,7 @@ resource "aws_subnet" "eks-subnet-private" {
     map(
      "Name", "${var.cluster-name}-private",
      "kubernetes.io/cluster/${var.cluster-name}", "shared",
+     "kubernetes.io/role/internal-elb","1"
     )
   }"
 }
@@ -98,6 +104,7 @@ resource "aws_subnet" "eks-subnet-private-b" {
     map(
      "Name", "${var.cluster-name}-private-b",
      "kubernetes.io/cluster/${var.cluster-name}", "shared",
+     "kubernetes.io/role/internal-elb","1"
     )
   }"
 }
@@ -195,6 +202,7 @@ resource "aws_iam_role_policy_attachment" "eks-node-EC2ReadOnly-master" {
 resource "aws_eks_cluster" "eks-cluster" {
   name     = "${var.cluster-name}"
   role_arn = "${aws_iam_role.eks-master-role.arn}"
+  version  =  "${var.eks_cluster_version}"
   vpc_config {
     security_group_ids = ["${aws_security_group.eks-cluster-master.id}"]
     subnet_ids         = ["${aws_subnet.eks-public-a.id}", "${aws_subnet.eks-public-b.id}"]
@@ -419,6 +427,14 @@ resource "aws_security_group" "eks-node-private" {
     description     = "gateway"
   }
 
+  ingress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["${aws_vpc.eks-vpc.cidr_block}"]
+    description = "allow from cluster vpc"
+  }
+
   tags = "${
     map(
     "Name", "${var.cluster-name}-nodes-private",
@@ -576,8 +592,7 @@ resource "aws_security_group" "eks-corporate" {
 
   tags = "${
     map(
-    "Name", "${var.cluster-name}-corp",
-     "kubernetes.io/cluster/${var.cluster-name}", "owned",
+    "Name", "${var.cluster-name}-corp"
     )
   }"
 }
@@ -806,7 +821,24 @@ spec:
 
 LETSENCRYPT_POLICY
 
+  eks-nginx-ingress-settings = <<NGNIX_INGRESS
+controller:
+  podAnnotations: 
+     cluster_name: "${var.cluster-name}"
+  nodeSelector: 
+   appgroup: system
 
+  service:
+    annotations: 
+      service.beta.kubernetes.io/aws-load-balancer-backend-protocol: "https"
+      service.beta.kubernetes.io/aws-load-balancer-security-groups: "${aws_security_group.eks-node-private.id}"
+      service.beta.kubernetes.io/aws-load-balancer-type: nlb
+NGNIX_INGRESS
+}
+
+resource "local_file" "eks-nginx-ingress-settings-file" {
+  content  = "${local.eks-nginx-ingress-settings}"
+  filename = "${path.module}/output/${var.cluster-name}-nginx-ingress.yaml"
 }
 
 resource "local_file" "kube_cfg" {
@@ -844,23 +876,46 @@ resource "local_file" "letsencrypt_policy_file" {
   filename = "${path.module}/output/${var.cluster-name}-letsencryptpolicy.yaml"
 }
 
+resource "local_file" "token_file" {
+  content  = ""
+  filename = "${path.module}/output/${var.cluster-name}.token"
+}
+
 locals {
   eks-run-script = <<RUNSCRIPT
 
 export AWS_ACCESS_KEY_ID=${var.aws_access_key}
 export AWS_SECRET_ACCESS_KEY=${var.aws_secret_key}
-sleep 30
+echo "Pausing for 60secs for the cluster to initialize"
+
+sleep 60
+
+RET=1
+while [[ RET -ne 0 ]]; do
+    echo "===> Pausing for 15secs for the cluster to start"
+    sleep 15
+    response=$(curl -sSk ${aws_eks_cluster.eks-cluster.endpoint} > /dev/null)
+    RET=$?
+done
+
+echo "===> Cluster is up `date`"
+
 export KUBECONFIG=${local_file.kube_cfg.filename}
 kubectl apply -f ${local_file.kube_auth.filename}
 kubectl get componentstatus 
 kubectl get nodes
+
+
+#setup helm for the cluster
+kubectl create serviceaccount --namespace kube-system tiller
+kubectl create clusterrolebinding tiller-cluster-rule --clusterrole=cluster-admin --serviceaccount=kube-system:tiller
+helm init --service-account tiller
+
+# install kubernetes dashboard
 kubectl apply -f https://raw.githubusercontent.com/kubernetes/dashboard/v1.10.1/src/deploy/recommended/kubernetes-dashboard.yaml
 kubectl apply -f https://raw.githubusercontent.com/kubernetes/heapster/master/deploy/kube-config/influxdb/heapster.yaml
 kubectl apply -f https://raw.githubusercontent.com/kubernetes/heapster/master/deploy/kube-config/influxdb/influxdb.yaml
 kubectl apply -f https://raw.githubusercontent.com/kubernetes/heapster/master/deploy/kube-config/rbac/heapster-rbac.yaml
-
-#kubectl apply -f ${local_file.tiller_rbac.filename}
-#helm init --node-selectors "appgroup"="system" --tiller-namespace kube-system --tiller-service-account tiller
 
 # Create service accounts
 kubectl apply -f ${local_file.kube_service_account.filename}
@@ -869,11 +924,36 @@ kubectl apply -f ${local_file.kube_role_binding.filename}
 #create storage class and volumes
 kubectl apply -f ${local_file.eks-storage-file.filename}
 
+echo "Pausing for 60secs for the pods to initialize"
+sleep 60
 
-#setup helm for the cluster
-kubectl create serviceaccount --namespace kube-system tiller
-kubectl create clusterrolebinding tiller-cluster-rule --clusterrole=cluster-admin --serviceaccount=kube-system:tiller
-helm init --service-account tiller
+echo "===> Check Tiller POD `date`"
+
+RET=1
+while [[ RET -ne 0 ]]; do
+    echo "===> Pausing for 15secs for the tiller to start"
+    sleep 15
+    TILLER_POD=$(kubectl get pods --field-selector=status.phase=Running -n kube-system -l name=tiller -o jsonpath="{.items[0].metadata.name}")
+    RET=$?
+done
+
+echo "===> Tiller pod is running `date`"
+
+helm install --name nginx-ingress stable/nginx-ingress --set rbac.create=true --namespace ingress-nginx -f ${local_file.eks-nginx-ingress-settings-file.filename}
+
+helm install stable/cert-manager \
+    --namespace ingress-nginx  \
+    --set ingressShim.defaultIssuerName=letsencrypt-prod \
+    --set ingressShim.defaultIssuerKind=ClusterIssuer \
+    --version v0.5.2
+
+kubectl apply -f ${local_file.letsencrypt_policy_file.filename} -n ingress-nginx
+
+echo "Pausing 30 sec for the load balancer to created"
+sleep 30
+ELB_EXTERNAL_IP=$(kubectl get  svc nginx-ingress-controller -n ingress-nginx -o jsonpath="{.status.loadBalancer.ingress[0].hostname}")
+
+echo ELB: $ELB_EXTERNAL_IP
 
 
 APISERVER=$(kubectl config view | grep server | cut -f 2- -d ":" | tr -d " ")
@@ -881,7 +961,7 @@ TOKEN=$(kubectl -n kube-system describe secret $(kubectl -n kube-system get secr
 
 echo TOKEN:$TOKEN
 echo APISERVER:$APISERVER
-echo $TOKEN > ${path.module}/output/${var.cluster-name}.token
+echo $TOKEN > ${local_file.token_file.filename}
 
 RUNSCRIPT
 
@@ -892,6 +972,7 @@ export AWS_SECRET_ACCESS_KEY=${var.aws_secret_key}
 export KUBECONFIG=${local_file.kube_cfg.filename}
 
 RUNSCRIPT
+
 }
 
 resource "local_file" "eks-auth-keys-file" {
@@ -985,7 +1066,7 @@ resource "aws_instance" "system-node" {
 resource "aws_instance" "public-node" {
   count                  = 1
   ami                    = "${data.aws_ami.eks-worker.id}"
-  instance_type          = "t3.medium"
+  instance_type          = "t3.small"
   key_name               = "${aws_key_pair.stack-kp.key_name}"
   vpc_security_group_ids = ["${aws_security_group.eks-node-private.id}","${aws_security_group.eks-corporate.id}"]
   user_data_base64       = "${base64encode(local.public-node-userdata )}"

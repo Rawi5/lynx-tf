@@ -29,7 +29,10 @@ spec:
 
 EOF
 
-helm install --name nginx-ingress stable/nginx-ingress --set rbac.create=true --namespace ingress-nginx
+#defaultBackend.service.annotations
+#--set controller.metrics.enabled=true
+
+#helm install --name nginx-ingress stable/nginx-ingress --set rbac.create=true --namespace ingress-nginx
 
 helm install stable/cert-manager \
     --namespace ingress-nginx  \

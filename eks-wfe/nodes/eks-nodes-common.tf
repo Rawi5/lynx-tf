@@ -1,6 +1,10 @@
 # Variables
 variable "cluster-name" {}
 
+variable "eks_cluster_version" {
+  default = "1.13"
+}
+
 variable "instance_types" {
   default = {
     primary   = "m5.large"
@@ -29,7 +33,7 @@ data "aws_iam_instance_profile" "eks-node-profile" {
 data "aws_ami" "eks-worker" {
   filter {
     name   = "name"
-    values = ["amazon-eks-node-1.11*"]
+    values = ["amazon-eks-node-${var.eks_cluster_version}*"]
   }
 
   most_recent = true

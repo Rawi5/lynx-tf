@@ -1,6 +1,6 @@
 #!/bin/bash
 
-CLUSTER_NAME=stacklynx-v2
+CLUSTER_NAME=stacklynx-`openssl rand -base64 32 | base64 | head -c 4`
 VPC_PREFIX=10.11
 EKS_TYPE=cluster
 CLUSTER_REGION=us-east-1
@@ -43,5 +43,16 @@ cat ./eks-vars.tfvars.tmpl   \
   | sed "s|{{CORP_IPS}}|${CORP_IPS}|g"  \
 > ./output/eks-vars-${CLUSTER_NAME}.tfvars
 
-terraform init  $EKS_TYPE
-terraform destroy -var-file=./output/eks-vars-${CLUSTER_NAME}.tfvars -state=./output/$CLUSTER_NAME-$EKS_TYPE.state   $EKS_TYPE
+source cluster/output/${CLUSTER_NAME}-auth-keys.sh  
+helm del --purge nginx-ingress
+
+if [ -z "${EKS_TYPE}" ] ; then # if type is not set then create the cluster and nodes
+  terraform  init  cluster
+  terraform  destroy -var-file=./output/eks-vars-${CLUSTER_NAME}.tfvars -state=./output/$CLUSTER_NAME-cluster.state   cluster
+  terraform  init  nodes
+  terraform  destroy -var-file=./output/eks-vars-${CLUSTER_NAME}.tfvars -state=./output/$CLUSTER_NAME-nodes.state   nodes
+else 
+  terraform  init  $EKS_TYPE
+  terraform  destroy -var-file=./output/eks-vars-${CLUSTER_NAME}.tfvars -state=./output/$CLUSTER_NAME-$EKS_TYPE.state  $EKS_TYPE
+fi
+
