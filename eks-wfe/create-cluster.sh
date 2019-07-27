@@ -80,7 +80,7 @@ echo "set Env variables execute this: source cluster/output/${CLUSTER_NAME}-auth
 source cluster/output/${CLUSTER_NAME}-auth-keys.sh 
 echo Waiting 30s for the nodes to be initialized
 sleep 30
-kubectl apply -f ./k8s-apps/echoserver.yml
+kubectl apply -f ./k8s-apps/echoserver.yaml
 kubectl get nodes -o wide
 kubectl get svc -n echoserver -o wide
 kubectl get svc -n ingress-nginx -o wide
@@ -88,3 +88,5 @@ kubectl get svc -n ingress-nginx -o wide
 echo Load Balancer DNS: $(kubectl get  svc nginx-ingress-controller -n ingress-nginx -o jsonpath="{.status.loadBalancer.ingress[0].hostname}")
 
 echo "Cluster Setup Completed: $CLUSTER_NAME  `date`"
+
+echo "Test the setup using the proxy http://localhost:8001/api/v1/namespaces/echoserver/services/http:echoserver:/proxy/"

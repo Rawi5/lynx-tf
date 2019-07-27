@@ -5,6 +5,16 @@ variable "eks_cluster_version" {
   default = "1.13"
 }
 
+variable "vpcnet_prefix" {
+  default = "10.10"
+}
+
+variable "corporate_cidr_list" {
+  type = "list"
+
+  default = []
+}
+
 variable "instance_types" {
   default = {
     primary   = "m5.large"
