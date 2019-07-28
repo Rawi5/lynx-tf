@@ -2,7 +2,7 @@
 
 CLUSTER_NAME=stacklynx-`openssl rand -base64 32 | base64 | head -c 4`
 VPC_PREFIX=10.11
-EKS_TYPE=cluster
+EKS_TYPE=
 CLUSTER_REGION=us-east-1
 AWS_KEY=
 AWS_SECRET=
@@ -34,24 +34,28 @@ if  [  -z "${AWS_SECRET}" ]  ; then
  exit 1
 fi
 
-cat ./eks-vars.tfvars.tmpl   \
-  | sed "s|{{CLUSTER_NAME}}|${CLUSTER_NAME}|g"  \
-  | sed "s|{{VPC_PREFIX}}|${VPC_PREFIX}|g"  \
-  | sed "s|{{CLUSTER_REGION}}|${CLUSTER_REGION}|g"  \
-  | sed "s|{{AWS_KEY}}|${AWS_KEY}|g"  \
-  | sed "s|{{AWS_SECRET}}|${AWS_SECRET}|g"  \
-  | sed "s|{{CORP_IPS}}|${CORP_IPS}|g"  \
-> ./output/eks-vars-${CLUSTER_NAME}.tfvars
+cat <<EOF > ./output/eks-vars-${CLUSTER_NAME}.tfvars
+aws_access_key = "${AWS_KEY}"
+aws_secret_key = "${AWS_SECRET}"
+aws_region = "{{CLUSTER_REGION}"
+cluster-name = "${CLUSTER_NAME}"
+vpcnet_prefix ="${VPC_PREFIX}"
+corporate_cidr_list=["${CORP_IPS}"]
+EOF
 
 source cluster/output/${CLUSTER_NAME}-auth-keys.sh  
 helm del --purge nginx-ingress
 
 if [ -z "${EKS_TYPE}" ] ; then # if type is not set then create the cluster and nodes
-  terraform  init  cluster
-  terraform  destroy -var-file=./output/eks-vars-${CLUSTER_NAME}.tfvars -state=./output/$CLUSTER_NAME-cluster.state   cluster
+  echo "destroying the vars:./output/eks-vars-${CLUSTER_NAME}.tfvars  state:./output/$CLUSTER_NAME-nodes.state"
   terraform  init  nodes
-  terraform  destroy -var-file=./output/eks-vars-${CLUSTER_NAME}.tfvars -state=./output/$CLUSTER_NAME-nodes.state   nodes
+  terraform  destroy -var-file=./output/eks-vars-${CLUSTER_NAME}.tfvars -state=./output/$CLUSTER_NAME-nodes.state nodes
+  
+  echo "destroying the vars:./output/eks-vars-${CLUSTER_NAME}.tfvars  state:./output/$CLUSTER_NAME-cluster.state"
+  terraform  init  cluster
+  terraform  destroy -var-file=./output/eks-vars-${CLUSTER_NAME}.tfvars -state=./output/$CLUSTER_NAME-cluster.state cluster
 else 
+  echo "destroying the vars:./output/eks-vars-${CLUSTER_NAME}.tfvars  state:./output/$CLUSTER_NAME-$EKS_TYPE.state"
   terraform  init  $EKS_TYPE
   terraform  destroy -var-file=./output/eks-vars-${CLUSTER_NAME}.tfvars -state=./output/$CLUSTER_NAME-$EKS_TYPE.state  $EKS_TYPE
 fi

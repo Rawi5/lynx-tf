@@ -961,7 +961,7 @@ TOKEN=$(kubectl -n kube-system describe secret $(kubectl -n kube-system get secr
 
 echo TOKEN:$TOKEN
 echo APISERVER:$APISERVER
-echo $TOKEN > ${local_file.token_file.filename}
+echo $TOKEN >> "${path.module}/output/${var.cluster-name}.token"
 
 RUNSCRIPT
 
@@ -1028,7 +1028,7 @@ USERDATA
 
   system-node-userdata = <<USERDATA
 ${local.worker-node-userdata}
-/etc/eks/bootstrap.sh --kubelet-extra-args --node-labels=nodetype=stateful,appgroup=system,node-ip=$NODE_IP --apiserver-endpoint '${aws_eks_cluster.eks-cluster.endpoint}' --b64-cluster-ca '${aws_eks_cluster.eks-cluster.certificate_authority.0.data}' '${var.cluster-name}'
+/etc/eks/bootstrap.sh --kubelet-extra-args --node-labels=nodetype=stateful,nodegroup=system,node-ip=$NODE_IP --apiserver-endpoint '${aws_eks_cluster.eks-cluster.endpoint}' --b64-cluster-ca '${aws_eks_cluster.eks-cluster.certificate_authority.0.data}' '${var.cluster-name}'
 USERDATA
 
   public-node-userdata = <<USERDATA

@@ -30,7 +30,10 @@ source cluster/output/stacklynx-v4-auth-keys.sh
 
 
 
+
 #### DELETING THE CLUSTER******
+
+
 
 kubectl delete ns ingress-nginx
 ./delete-cluster.sh -k <aws_key> -s <aws_key> -t nodes -c stacklynx-v4

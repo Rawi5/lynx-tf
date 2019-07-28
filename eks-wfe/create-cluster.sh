@@ -89,4 +89,4 @@ echo Load Balancer DNS: $(kubectl get  svc nginx-ingress-controller -n ingress-n
 
 echo "Cluster Setup Completed: $CLUSTER_NAME  `date`"
 
-echo "Test the setup using the proxy http://localhost:8001/api/v1/namespaces/echoserver/services/http:echoserver:/proxy/"
+echo "Test the setup using the proxy Run ./kubeproxy and http://localhost:8001/api/v1/namespaces/echoserver/services/http:echoserver:/proxy/"
