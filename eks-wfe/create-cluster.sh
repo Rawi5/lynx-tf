@@ -36,14 +36,16 @@ if  [  -z "${AWS_SECRET}" ]  ; then
  exit 1
 fi
 
-cat ./eks-vars.tfvars.tmpl   \
-  | sed "s|{{CLUSTER_NAME}}|${CLUSTER_NAME}|g"  \
-  | sed "s|{{VPC_PREFIX}}|${VPC_PREFIX}|g"  \
-  | sed "s|{{CLUSTER_REGION}}|${CLUSTER_REGION}|g"  \
-  | sed "s|{{AWS_KEY}}|${AWS_KEY}|g"  \
-  | sed "s|{{AWS_SECRET}}|${AWS_SECRET}|g"  \
-  | sed "s|{{CORP_IPS}}|${CORP_IPS}|g"  \
-> ./output/eks-vars-${CLUSTER_NAME}.tfvars
+cat <<EOF > ./output/eks-vars-${CLUSTER_NAME}.tfvars
+aws_access_key = "${AWS_KEY}"
+aws_secret_key = "${AWS_SECRET}"
+aws_region = "${CLUSTER_REGION}"
+cluster-name = "${CLUSTER_NAME}"
+vpcnet_prefix ="${VPC_PREFIX}"
+corporate_cidr_list=["${CORP_IPS}"]
+EOF
+
+
 
 echo "Creating Cluster: $CLUSTER_NAME  `date`"
 
@@ -77,6 +79,8 @@ echo "Total time taken for cluster creation: $elapsed sec"
 
 echo "set Env variables execute this: source cluster/output/${CLUSTER_NAME}-auth-keys.sh"
 
+AUTH_FILE=cluster/output/${CLUSTER_NAME}-auth-keys.sh
+if [ -f "$AUTH_FILE" ]; then
 source cluster/output/${CLUSTER_NAME}-auth-keys.sh 
 echo Waiting 30s for the nodes to be initialized
 sleep 30
@@ -90,3 +94,6 @@ echo Load Balancer DNS: $(kubectl get  svc nginx-ingress-controller -n ingress-n
 echo "Cluster Setup Completed: $CLUSTER_NAME  `date`"
 
 echo "Test the setup using the proxy Run ./kubeproxy and http://localhost:8001/api/v1/namespaces/echoserver/services/http:echoserver:/proxy/"
+else
+  echo "Auth file:$AUTH_FILE does not exist: Cluster creation probably failed"
+fi

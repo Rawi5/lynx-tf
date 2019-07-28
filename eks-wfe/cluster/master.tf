@@ -826,9 +826,11 @@ controller:
   podAnnotations: 
      cluster_name: "${var.cluster-name}"
   nodeSelector: 
-   appgroup: system
+   nodegroup: system
 
   service:
+    enableHttp: false
+    enableHttps: true
     annotations: 
       service.beta.kubernetes.io/aws-load-balancer-backend-protocol: "https"
       service.beta.kubernetes.io/aws-load-balancer-security-groups: "${aws_security_group.eks-node-private.id}"
@@ -962,6 +964,9 @@ TOKEN=$(kubectl -n kube-system describe secret $(kubectl -n kube-system get secr
 echo TOKEN:$TOKEN
 echo APISERVER:$APISERVER
 echo $TOKEN >> "${path.module}/output/${var.cluster-name}.token"
+
+echo "System Gateway Public IP: ${aws_instance.system-gateway.public_ip}"
+echo "Public Node Public IP: ${aws_instance.public-node.public_ip}"
 
 RUNSCRIPT
 
