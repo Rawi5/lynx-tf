@@ -829,7 +829,7 @@ controller:
    nodegroup: system
 
   service:
-    enableHttp: false
+    enableHttp: true
     enableHttps: true
     annotations: 
       service.beta.kubernetes.io/aws-load-balancer-backend-protocol: "https"
@@ -965,7 +965,13 @@ echo TOKEN:$TOKEN
 echo APISERVER:$APISERVER
 echo $TOKEN >> "${path.module}/output/${var.cluster-name}.token"
 
+echo "System Gateway Public IP: ${aws_instance.system-gateway.public_ip}"
+echo "Public Node Public IP: ${aws_instance.public-node.public_ip}"
 
+echo "System Gateway Public IP: ${aws_instance.system-gateway.public_ip}" > "${path.module}/output/${var.cluster-name}.out"
+echo "Public Node Public IP: ${aws_instance.public-node.public_ip}" >> "${path.module}/output/${var.cluster-name}.out"
+echo "ELB: $ELB_EXTERNAL_IP" >> "${path.module}/output/${var.cluster-name}.out"
+echo "Token:$TOKEN" >> "${path.module}/output/${var.cluster-name}.out"
 
 RUNSCRIPT
 
@@ -1068,7 +1074,6 @@ resource "aws_instance" "system-node" {
 }
 
 resource "aws_instance" "public-node" {
-  count                  = 1
   ami                    = "${data.aws_ami.eks-worker.id}"
   instance_type          = "t3.small"
   key_name               = "${aws_key_pair.stack-kp.key_name}"
@@ -1088,7 +1093,7 @@ resource "aws_instance" "public-node" {
 
   tags = "${
     map(
-     "Name", "${var.cluster-name}-eks-public-node-${count.index}",
+     "Name", "${var.cluster-name}-eks-public-node",
      "kubernetes.io/cluster/${var.cluster-name}", "shared",
     )
   }"
