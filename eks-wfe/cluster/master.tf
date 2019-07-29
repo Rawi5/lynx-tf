@@ -965,13 +965,7 @@ echo TOKEN:$TOKEN
 echo APISERVER:$APISERVER
 echo $TOKEN >> "${path.module}/output/${var.cluster-name}.token"
 
-echo "System Gateway Public IP: ${aws_instance.system-gateway.public_ip}"
-echo "Public Node Public IP: ${aws_instance.public-node.public_ip[0]}"
 
-echo "System Gateway Public IP: ${aws_instance.system-gateway.public_ip}" > "${path.module}/output/${var.cluster-name}.out"
-echo "Public Node Public IP: ${aws_instance.public-node.public_ip[0]}" >> "${path.module}/output/${var.cluster-name}.out"
-echo "ELB: $ELB_EXTERNAL_IP" >> "${path.module}/output/${var.cluster-name}.out"
-echo "Token:$TOKEN" >> "${path.module}/output/${var.cluster-name}.out"
 
 RUNSCRIPT
 
