@@ -12,12 +12,12 @@ mkdir -p ./output
 while getopts c:n:t:r:k:s: option
 do
         case $option in
-                c) CLUSTER_NAME=${OPTARG} ;;
+              c) CLUSTER_NAME=${OPTARG} ;;
 	            n) VPC_PREFIX=${OPTARG} ;;
 	            t) EKS_TYPE=${OPTARG} ;;
 	            r) CLUSTER_REGION=${OPTARG} ;;
-				k) AWS_KEY=${OPTARG} ;;
-				s) AWS_SECRET=${OPTARG} ;;
+              k) AWS_KEY=${OPTARG} ;;
+              s) AWS_SECRET=${OPTARG} ;;
                 \?) echo "Unknown option: -$OPTARG" >&2; phelp; exit 1;;
         		:) echo "Missing option argument for -$OPTARG" >&2; phelp; exit 1;;
         		*) echo "Unimplimented option: -$OPTARG" >&2; phelp; exit 1;;
@@ -34,10 +34,11 @@ if  [  -z "${AWS_SECRET}" ]  ; then
  exit 1
 fi
 
+echo 
 cat <<EOF > ./output/eks-vars-${CLUSTER_NAME}.tfvars
 aws_access_key = "${AWS_KEY}"
 aws_secret_key = "${AWS_SECRET}"
-aws_region = "{{CLUSTER_REGION}"
+aws_region = "${CLUSTER_REGION}"
 cluster-name = "${CLUSTER_NAME}"
 vpcnet_prefix ="${VPC_PREFIX}"
 corporate_cidr_list=["${CORP_IPS}"]
