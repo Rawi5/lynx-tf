@@ -48,8 +48,8 @@ resource "aws_vpc" "eks-vpc" {
 
   tags = "${
     map(
-     "Name", "${var.cluster-name}",
-     "kubernetes.io/cluster/${var.cluster-name}", "shared",
+      "Name", "${var.cluster-name}",
+      "kubernetes.io/cluster/${var.cluster-name}", "shared",
     )
   }"
 }
@@ -61,8 +61,8 @@ resource "aws_subnet" "eks-public-a" {
 
   tags = "${
     map(
-     "Name", "${var.cluster-name}-public-a",
-     "kubernetes.io/cluster/${var.cluster-name}", "shared",
+      "Name", "${var.cluster-name}-public-a",
+      "kubernetes.io/cluster/${var.cluster-name}", "shared",
     )
   }"
 }
@@ -74,9 +74,9 @@ resource "aws_subnet" "eks-public-b" {
 
   tags = "${
     map(
-     "Name", "${var.cluster-name}-public-b",
-     "kubernetes.io/cluster/${var.cluster-name}", "shared",
-     "kubernetes.io/role/elb","1"
+      "Name", "${var.cluster-name}-public-b",
+      "kubernetes.io/cluster/${var.cluster-name}", "shared",
+      "kubernetes.io/role/elb", "1"
     )
   }"
 }
@@ -88,9 +88,9 @@ resource "aws_subnet" "eks-subnet-private" {
 
   tags = "${
     map(
-     "Name", "${var.cluster-name}-private",
-     "kubernetes.io/cluster/${var.cluster-name}", "shared",
-     "kubernetes.io/role/internal-elb","1"
+      "Name", "${var.cluster-name}-private",
+      "kubernetes.io/cluster/${var.cluster-name}", "shared",
+      "kubernetes.io/role/internal-elb", "1"
     )
   }"
 }
@@ -102,9 +102,9 @@ resource "aws_subnet" "eks-subnet-private-b" {
 
   tags = "${
     map(
-     "Name", "${var.cluster-name}-private-b",
-     "kubernetes.io/cluster/${var.cluster-name}", "shared",
-     "kubernetes.io/role/internal-elb","1"
+      "Name", "${var.cluster-name}-private-b",
+      "kubernetes.io/cluster/${var.cluster-name}", "shared",
+      "kubernetes.io/role/internal-elb", "1"
     )
   }"
 }
@@ -112,12 +112,33 @@ resource "aws_subnet" "eks-subnet-private-b" {
 resource "aws_internet_gateway" "eks-igw" {
   vpc_id = "${aws_vpc.eks-vpc.id}"
 
- tags = {
+  tags = {
     Name = "${var.cluster-name}"
   }
 
-  
+
 }
+
+resource "aws_eip" "eks-nat-eip" {
+  vpc = true
+
+  tags = {
+    Name = "${var.cluster-name}-nat-eip"
+  }
+  depends_on = ["aws_internet_gateway.eks-igw"]
+}
+
+resource "aws_nat_gateway" "eks-natgw" {
+  allocation_id = "${aws_eip.eks-nat-eip.id}"
+  subnet_id     = "${aws_subnet.eks-public-a.id}"
+
+  tags = {
+    Name = "${var.cluster-name}-nat"
+  }
+  depends_on = ["aws_internet_gateway.eks-igw"]
+}
+
+
 
 resource "aws_route_table" "eks-rt" {
   vpc_id = "${aws_vpc.eks-vpc.id}"
@@ -127,7 +148,7 @@ resource "aws_route_table" "eks-rt" {
     gateway_id = "${aws_internet_gateway.eks-igw.id}"
   }
 
- tags = {
+  tags = {
     Name = "${var.cluster-name}-rt-public"
   }
 }
@@ -136,11 +157,11 @@ resource "aws_route_table" "eks-rt-private" {
   vpc_id = "${aws_vpc.eks-vpc.id}"
 
   route {
-    cidr_block  = "0.0.0.0/0"
-    instance_id = "${aws_instance.system-gateway.id}"
+    cidr_block     = "0.0.0.0/0"
+    nat_gateway_id = "${aws_nat_gateway.eks-natgw.id}"
   }
 
- tags = {
+  tags = {
     Name = "${var.cluster-name}-rt-private"
   }
 }
@@ -186,26 +207,26 @@ POLICY
 
 resource "aws_iam_role_policy_attachment" "master-cluster-AmazonEKSClusterPolicy" {
   policy_arn = "arn:aws:iam::aws:policy/AmazonEKSClusterPolicy"
-  role       = "${aws_iam_role.eks-master-role.name}"
+  role = "${aws_iam_role.eks-master-role.name}"
 }
 
 resource "aws_iam_role_policy_attachment" "master-cluster-AmazonEKSServicePolicy" {
   policy_arn = "arn:aws:iam::aws:policy/AmazonEKSServicePolicy"
-  role       = "${aws_iam_role.eks-master-role.name}"
+  role = "${aws_iam_role.eks-master-role.name}"
 }
 
 resource "aws_iam_role_policy_attachment" "eks-node-EC2ReadOnly-master" {
   policy_arn = "arn:aws:iam::aws:policy/AmazonEC2ReadOnlyAccess"
-  role       = "${aws_iam_role.eks-master-role.name}"
+  role = "${aws_iam_role.eks-master-role.name}"
 }
 
 resource "aws_eks_cluster" "eks-cluster" {
-  name     = "${var.cluster-name}"
+  name = "${var.cluster-name}"
   role_arn = "${aws_iam_role.eks-master-role.arn}"
-  version  =  "${var.eks_cluster_version}"
+  version = "${var.eks_cluster_version}"
   vpc_config {
     security_group_ids = ["${aws_security_group.eks-cluster-master.id}"]
-    subnet_ids         = ["${aws_subnet.eks-public-a.id}", "${aws_subnet.eks-public-b.id}"]
+    subnet_ids = ["${aws_subnet.eks-public-a.id}", "${aws_subnet.eks-public-b.id}"]
   }
 
   depends_on = [
@@ -347,9 +368,9 @@ resource "aws_security_group" "eks-node" {
   }
 
   ingress {
-    from_port       = 30000
-    to_port         = 35000
-    protocol        = "tcp"
+    from_port   = 30000
+    to_port     = 35000
+    protocol    = "tcp"
     cidr_blocks = ["0.0.0.0/0"]
   }
 
@@ -526,16 +547,16 @@ resource "aws_security_group" "eks-public-web" {
  
 
   ingress {
-    from_port       = 443
-    to_port         = 443
-    protocol        = "tcp"
+    from_port   = 443
+    to_port     = 443
+    protocol    = "tcp"
     cidr_blocks = ["0.0.0.0/0"]
   }
 
   ingress {
-    from_port       = 80
-    to_port         = 80
-    protocol        = "tcp"
+    from_port   = 80
+    to_port     = 80
+    protocol    = "tcp"
     cidr_blocks = ["0.0.0.0/0"]
   }
 
@@ -724,7 +745,7 @@ subjects:
   namespace: kube-system
 CONFIGROLEBINDING
 
-tiller-rbac = <<TILLERROLEBINDING
+  tiller-rbac = <<TILLERROLEBINDING
 
 
 apiVersion: v1
@@ -965,10 +986,10 @@ echo TOKEN:$TOKEN
 echo APISERVER:$APISERVER
 echo $TOKEN >> "${path.module}/output/${var.cluster-name}.token"
 
-echo "System Gateway Public IP: ${aws_instance.system-gateway.public_ip}"
+echo "System Gateway Public IP: ${aws_eip.eks-nat-eip.public_ip}"
 echo "Public Node Public IP: ${aws_instance.public-node.public_ip}"
 
-echo "System Gateway Public IP: ${aws_instance.system-gateway.public_ip}" > "${path.module}/output/${var.cluster-name}.out"
+echo "System Gateway Public IP: ${aws_eip.eks-nat-eip.public_ip}" > "${path.module}/output/${var.cluster-name}.out"
 echo "Public Node Public IP: ${aws_instance.public-node.public_ip}" >> "${path.module}/output/${var.cluster-name}.out"
 echo "ELB: $ELB_EXTERNAL_IP" >> "${path.module}/output/${var.cluster-name}.out"
 echo "Token:$TOKEN" >> "${path.module}/output/${var.cluster-name}.out"
@@ -986,13 +1007,14 @@ RUNSCRIPT
 }
 
 resource "local_file" "eks-auth-keys-file" {
-  content  = "${local.eks-auth-keys }"
-  filename = "${path.module}/output/${var.cluster-name}-auth-keys.sh"
+  content  = "${local.eks-auth-keys}"
+  filename = "${path.cwd}/${path.root}/output/${var.cluster-name}-auth-keys.sh"
 
   provisioner "local-exec" {
     command = "chmod +x ${local_file.eks-auth-keys-file.filename}"
   }
 }
+
 
 resource "local_file" "eks-run-script" {
   content  = "${local.eks-run-script}"
@@ -1048,21 +1070,21 @@ USERDATA
 }
 
 resource "aws_instance" "system-node" {
-  count                  = 2
-  ami                    = "${data.aws_ami.eks-worker.id}"
-  instance_type          = "t3.small"
-  key_name               = "${var.cluster-name}-kp"
+  count = 2
+  ami = "${data.aws_ami.eks-worker.id}"
+  instance_type = "t3.small"
+  key_name = "${var.cluster-name}-kp"
   vpc_security_group_ids = ["${aws_security_group.eks-node-private.id}"]
-  user_data_base64       = "${base64encode(local.system-node-userdata)}"
-  subnet_id              = "${aws_subnet.eks-subnet-private.id}"
-  iam_instance_profile   = "${aws_iam_instance_profile.eks-node-profile.name}"
+  user_data_base64 = "${base64encode(local.system-node-userdata)}"
+  subnet_id = "${aws_subnet.eks-subnet-private.id}"
+  iam_instance_profile = "${aws_iam_instance_profile.eks-node-profile.name}"
 
   associate_public_ip_address = false
-  source_dest_check           = false
+  source_dest_check = false
 
   root_block_device {
     delete_on_termination = true
-    volume_size           = 20
+    volume_size = 20
   }
 
   tags = "${
@@ -1074,21 +1096,21 @@ resource "aws_instance" "system-node" {
 }
 
 resource "aws_instance" "public-node" {
-  ami                    = "${data.aws_ami.eks-worker.id}"
-  instance_type          = "t3.small"
-  key_name               = "${aws_key_pair.stack-kp.key_name}"
-  vpc_security_group_ids = ["${aws_security_group.eks-node-private.id}","${aws_security_group.eks-corporate.id}"]
-  user_data_base64       = "${base64encode(local.public-node-userdata )}"
-  subnet_id              = "${aws_subnet.eks-public-a.id}"
-  iam_instance_profile   = "${aws_iam_instance_profile.eks-node-profile.name}"
+  ami = "${data.aws_ami.eks-worker.id}"
+  instance_type = "t3.small"
+  key_name = "${aws_key_pair.stack-kp.key_name}"
+  vpc_security_group_ids = ["${aws_security_group.eks-node-private.id}", "${aws_security_group.eks-corporate.id}"]
+  user_data_base64 = "${base64encode(local.public-node-userdata)}"
+  subnet_id = "${aws_subnet.eks-public-a.id}"
+  iam_instance_profile = "${aws_iam_instance_profile.eks-node-profile.name}"
 
   associate_public_ip_address = true
-  source_dest_check           = false
+  source_dest_check = false
 
   root_block_device {
     delete_on_termination = true
-    volume_size           = 20
-    volume_type           = "gp2"
+    volume_size = 20
+    volume_type = "gp2"
   }
 
   tags = "${
@@ -1100,6 +1122,7 @@ resource "aws_instance" "public-node" {
 }
 
 resource "aws_instance" "system-gateway" {
+  count = 0
   ami                    = "${data.aws_ami.gateway.id}"
   instance_type          = "t2.micro"
   key_name               = "${aws_key_pair.stack-kp.key_name}"
@@ -1124,16 +1147,16 @@ resource "aws_instance" "system-gateway" {
 
 resource "tls_private_key" "stack_ssh-kp" {
   algorithm = "RSA"
-  rsa_bits  = 4096
+  rsa_bits = 4096
 }
 
 resource "aws_key_pair" "stack-kp" {
-  key_name   = "${var.cluster-name}-kp"
+  key_name = "${var.cluster-name}-kp"
   public_key = "${tls_private_key.stack_ssh-kp.public_key_openssh}"
 }
 
 resource "local_file" "stack-kp-key" {
-  content  = "${tls_private_key.stack_ssh-kp.private_key_pem}"
+  content = "${tls_private_key.stack_ssh-kp.private_key_pem}"
   filename = "${path.module}/output/${var.cluster-name}-key.pem"
 
   provisioner "local-exec" {

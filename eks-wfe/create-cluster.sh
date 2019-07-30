@@ -1,6 +1,7 @@
 #!/bin/bash
 start_time="$(date -u +%s)"
 
+echo "Using Terraform version `terraform -v`"
 CLUSTER_NAME=stacklynx-`openssl rand -base64 32 | base64 | head -c 4`
 VPC_PREFIX=10.11
 EKS_TYPE=
