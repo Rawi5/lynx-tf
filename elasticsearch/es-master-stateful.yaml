@@ -18,8 +18,6 @@ spec:
         component: elasticsearch
         role: master
     spec:
-      nodeSelector:
-          appgroup: monitoring
       initContainers:
       - name: init-sysctl
         image: busybox:1.27.2

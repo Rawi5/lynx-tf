@@ -8,8 +8,6 @@ spec:
     spec:
       template:
         spec:
-          nodeSelector:
-            appgroup: monitoring
           containers:
           - name: curator
             image: quay.io/pires/docker-elasticsearch-curator:5.5.1

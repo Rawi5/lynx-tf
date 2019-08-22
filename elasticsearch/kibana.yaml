@@ -14,8 +14,6 @@ spec:
       labels:
         component: kibana
     spec:
-      nodeSelector:
-          appgroup: monitoring
       containers:
       - name: kibana
         image: docker.elastic.co/kibana/kibana-oss:6.3.2

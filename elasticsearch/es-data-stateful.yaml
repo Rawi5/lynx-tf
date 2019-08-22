@@ -17,9 +17,6 @@ spec:
       labels:
         component: elasticsearch
         role: data
-    spec:
-      nodeSelector:
-          appgroup: monitoring
       initContainers:
       - name: init-sysctl
         image: busybox:1.27.2
