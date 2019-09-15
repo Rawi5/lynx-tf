@@ -2,7 +2,7 @@
 start_time="$(date -u +%s)"
 
 CLUSTER_NAME="lynx-eks-v1"
-CLUSTER_ENDPOINT=10.12
+CLUSTER_ENDPOINT=
 CLUSTER_CERT=
 AWS_KEY=
 AWS_SECRET=
@@ -29,6 +29,21 @@ fi
 
 if  [  -z "${AWS_SECRET}" ]  ; then
  echo "Please set AWS_SECRET using -s option to procced"
+ exit 1
+fi
+
+if  [  -z "${CLUSTER_ENDPOINT}" ]  ; then
+ echo "Please set CLUSTER_ENDPOINT using -e option to procced"
+ exit 1
+fi
+
+if  [  -z "${CLUSTER_CERT}" ]  ; then
+ echo "Please set CLUSTER_CERT using -t option to procced"
+ exit 1
+fi
+
+if  [  -z "${CLUSTER_NAME}" ]  ; then
+ echo "Please set CLUSTER_NAME using -c option to procced"
  exit 1
 fi
 
@@ -71,8 +86,4 @@ kubectl get nodes
 
 TOKEN=$(kubectl -n kube-system describe secret $(kubectl -n kube-system get secret | grep eks-admin | cut -f1 -d ' ') | grep -E '^token' | cut -f2 -d':' | tr -d '\t')
 echo TOKEN:$TOKEN
-
-
-
-
 
