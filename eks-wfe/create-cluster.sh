@@ -8,7 +8,7 @@ EKS_TYPE=
 CLUSTER_REGION=us-east-1
 AWS_KEY=
 AWS_SECRET=
-CORP_IPS=`curl -s https://ifconfig.co`/32
+CORP_IPS=`curl -s -4 https://ifconfig.co`/32
 mkdir -p ./output
 
 while getopts c:n:t:r:k:s:i: option
