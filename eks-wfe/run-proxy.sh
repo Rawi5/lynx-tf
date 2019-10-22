@@ -87,3 +87,4 @@ kubectl get nodes
 TOKEN=$(kubectl -n kube-system describe secret $(kubectl -n kube-system get secret | grep eks-admin | cut -f1 -d ' ') | grep -E '^token' | cut -f2 -d':' | tr -d '\t')
 echo TOKEN:$TOKEN
 
+kubectl proxy
